@@ -55,13 +55,17 @@ int main(int argc, const char * argv[])
         // args check and initialization
         if (!(argc > 1)) dump_error(usage_string([NSString stringWithUTF8String:argv[0]]));
         NSString *interfaceName = [NSString stringWithUTF8String:argv[1]];
-        NSString *bssid = nil;
+        NSString *ssid = nil;
         if (argc > 2) {
-            bssid = [NSString stringWithUTF8String:argv[2]];
+            ssid = [NSString stringWithUTF8String:argv[2]];
+        }
+        int channel = -1;
+        if (argc > 3) {
+            channel = atoi(argv[3]);
         }
         NSString *password = nil;
-        if (argc > 3) {
-            password = [NSString stringWithUTF8String:argv[3]];
+        if (argc > 4) {
+            password = [NSString stringWithUTF8String:argv[4]];
         }
         
         // interface check
@@ -82,7 +86,7 @@ int main(int argc, const char * argv[])
         printf("\x1B[0m***** Scanned networks *****\n");
         printf("%24s, %17s, %3s, RSSI(dBm)\n", "ESSID", "BSSID", "Ch");
         for (CWNetwork *network in scan) {
-            if ([network.bssid isEqualToString:bssid]) {
+            if ([network.ssid isEqualToString:ssid] && ((channel < 0) || (channel == network.wlanChannel.channelNumber))) {
                 targetNetwork = network;
                 printf("%s%24s, %17s, %3lu, %3ld\n", "\x1B[32m", [network.ssid cStringUsingEncoding:NSUTF8StringEncoding], [network.bssid cStringUsingEncoding:NSUTF8StringEncoding], (unsigned long)network.wlanChannel.channelNumber, (long)network.rssiValue);
             } else {
@@ -91,12 +95,12 @@ int main(int argc, const char * argv[])
         }
         printf("\x1B[0m****************************\n");
 
-        if (bssid == nil) {
-            dump_error([NSString stringWithFormat:@"Network scan completed. If you want to connect to specific BSSID, please enter the command below:\n %@ <ifname> <bssid> [<password>]", [NSString stringWithUTF8String:argv[0]]]);
+        if (ssid == nil) {
+            dump_error([NSString stringWithFormat:@"Network scan completed. If you want to connect to specific SSID and channel, please enter the command below:\n %@ <ifname> <ssid> [channel=-1] [<password>]", [NSString stringWithUTF8String:argv[0]]]);
         }
 
         if (targetNetwork == nil)
-            dump_error([NSString stringWithFormat:@"The target network \"%@\" could not be found.", bssid]);
+            dump_error([NSString stringWithFormat:@"The target network \"%@\" and channel \"%d\" could not be found.", ssid, channel]);
         
         // connection trial
         BOOL result = [interface associateToNetwork:targetNetwork password:password error:&error];
@@ -107,7 +111,7 @@ int main(int argc, const char * argv[])
         if( !result )
 			dump_error(@"Could not connect to the network!");
         
-        printf("Associated to network \"%s\" (BSSID: %s)\n", [targetNetwork.ssid cStringUsingEncoding:NSUTF8StringEncoding], [bssid cStringUsingEncoding:NSUTF8StringEncoding]);
+        printf("Associated to network \"%s\" (SSID: %s, channel: %ld)\n", [targetNetwork.ssid cStringUsingEncoding:NSUTF8StringEncoding], [ssid cStringUsingEncoding:NSUTF8StringEncoding], targetNetwork.wlanChannel.channelNumber);
     }
     return 0;
 }
