@@ -3,7 +3,7 @@ SRC=airport-bssid/main.m
 FRAMEWORKS:= -framework Foundation -framework CoreWLAN -framework CoreLocation
 LIB:= -lobjc
 CFLAGS=-Wall -Werror -v
-TARGET=Build/airport-bssid
+TARGET=Build/airport-ssid-channel
 OBJECTS=$(SRC:%.m=%.o)
 
 all: $(TARGET)
